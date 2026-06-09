@@ -202,7 +202,7 @@ MHHAI_SEQUENCE = (
 # Fold the complex in the cloud by running the following command:
 
 # ```shell
-# modal run esmfold2.py
+# modal run src/esmfold2.py
 # ```
 
 # This will save the predicted structure locally as a
@@ -214,7 +214,7 @@ MHHAI_SEQUENCE = (
 # To fold a single protein chain instead, pass a sequence:
 
 # ```shell
-# modal run esmfold2.py --sequence "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQA..."
+# modal run src/esmfold2.py --sequence "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQA..."
 # ```
 
 
