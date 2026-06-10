@@ -55,6 +55,18 @@ ESMFold2 is available in two configurations:
   modal setup
   ```
 
+- **A Hugging Face account and access token.** The model weights are downloaded from the
+  Hugging Face Hub and require authentication. Create a free account, accept the access
+  terms on the [ESMFold2](https://huggingface.co/biohub/ESMFold2) and
+  [ESMFold2-Fast](https://huggingface.co/biohub/ESMFold2-Fast) model pages, then create a
+  read [access token](https://huggingface.co/settings/tokens). For Colab, see
+  [Run on Colab](#run-on-colab); for the Modal run, attach the token to the function as
+  the `HF_TOKEN` environment variable via a [Modal secret](https://modal.com/docs/guide/secrets).
+
+> **Note:** The end-to-end Hugging Face credential setup — in-notebook guidance and the
+> Modal secret wiring — is still being finalized. The steps here describe the intended
+> flow.
+
 ## Usage
 
 By default the example folds a protein–DNA–ligand complex — the M.HhaI DNA
@@ -94,8 +106,17 @@ export.
 | [`esmfold2_colab`](src/notebooks/esmfold2_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmc-esmfold2/blob/main/src/notebooks/esmfold2_colab.ipynb) | full **ESMFold2** | the M.HhaI/DNA/SAH complex by default, or a single chain | A100 / High-RAM |
 | [`esmfold2_fast_colab`](src/notebooks/esmfold2_fast_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmc-esmfold2/blob/main/src/notebooks/esmfold2_fast_colab.ipynb) | **ESMFold2-Fast** | a single protein sequence, plus an optional high-throughput batch | T4 (free tier) |
 
-In Colab, set a GPU runtime first via **Runtime → Change runtime type → GPU**, then
-**Runtime → Run all**. The notebooks `pip install` the `esm` package on each cold start.
+**Before you run** (one-time):
+
+1. **Turn on a GPU** — Runtime → Change runtime type → Hardware accelerator → GPU.
+2. **Add your Hugging Face token** — the weights download from the Hugging Face Hub, which
+   requires authentication. Click the 🔑 **Secrets** panel in Colab's left sidebar, add a
+   secret named **`HF_TOKEN`** with your [access token](https://huggingface.co/settings/tokens)
+   (see [Prerequisites](#prerequisites)) as the value, and toggle on **Notebook access**.
+   The notebook reads it automatically — nothing to paste into a cell.
+
+Then **Runtime → Run all**. The notebooks `pip install` the `esm` package on each cold
+start (a couple of minutes) before downloading the model.
 
 ## Output
 
