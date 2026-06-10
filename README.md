@@ -1,7 +1,7 @@
-# ESMFold2 on Modal
+# ESMFold2
 
 Fold proteins and biomolecular complexes with [ESMFold2](https://biohub.ai/esm/protein/about)
-on [Modal](https://modal.com)'s serverless GPU infrastructure.
+on [Modal](https://modal.com)'s and [Google Colab](https://colab.research.google.com/)'s serverless GPU infrastructure.
 
 ESMFold2 is a state-of-the-art model for biomolecular complex structure
 prediction, developed by [Biohub](https://biohub.ai/) and released under an open
