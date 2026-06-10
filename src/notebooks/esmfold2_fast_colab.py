@@ -12,61 +12,39 @@
 # %% [markdown]
 # # Fast single-sequence folding with ESMFold2-Fast
 #
-# [ESMFold2-Fast](https://huggingface.co/biohub/ESMFold2-Fast) is the smaller, inference-
-# optimized configuration of [ESMFold2](https://biohub.ai/esm/protein/about) from
-# [Biohub](https://biohub.ai/). It is tuned for **very fast single-sequence folding** —
-# well suited to high-throughput folding, designed sequences, metagenomic proteins, and
-# targets with limited homology. This notebook folds one protein chain by default and
-# includes an optional batch cell that folds several sequences in a loop.
+# **ESMFold2-Fast** is the smaller, inference-optimized configuration of
+# [ESMFold2](https://biohub.ai/esm/protein/about) from [Biohub](https://biohub.ai/). It
+# is tuned for **very fast single-sequence folding** — well suited to high-throughput
+# folding, designed sequences, metagenomic proteins, and targets with limited homology.
+# This notebook folds one protein chain by default and includes an optional batch cell
+# that folds several sequences in a loop.
 #
-# This is a notebook port of a Modal app; the model code is unchanged — only the
-# scaffolding is restructured so it runs top-to-bottom in Colab. For complexes
-# (protein + DNA + ligand) and maximum accuracy, use the companion
-# `esmfold2_colab.ipynb` notebook (the full model).
+# **New to this?** Just run the cells from top to bottom (**Runtime → Run all**). Each
+# code cell has a short note above it explaining what it does — no prior setup, accounts,
+# or local installs needed. For complexes (protein + DNA + ligand) and maximum accuracy,
+# use the companion `esmfold2_colab.ipynb` notebook (the full model).
 #
-# > **Before you run anything:** select a GPU runtime via
+# > **Before you run anything:** turn on a GPU via
 # > **Runtime → Change runtime type → Hardware accelerator → GPU**. ESMFold2-Fast is
-# > small, so a free-tier **T4** is sufficient.
+# > small, so a free **T4** is plenty.
 
 # %% [markdown]
 # ## Setup
 #
-# Colab runtimes are ephemeral — they reset silently and nothing persists between
-# sessions. So **every cold start** must reinstall the package and re-point the weight
-# cache. This single Setup cell does all of that and **must run first, before any
-# import**. We install `esm` from a pinned upstream commit (it pulls a custom
-# `transformers` fork and the CUDA build of PyTorch) so builds are reproducible.
+# Colab gives you a fresh, empty machine each session and forgets everything when the
+# session ends. So the first cell installs the software we need. **Run it first** and let
+# it finish before running anything else — installing takes a couple of minutes, which is
+# normal.
 
 # %%
-# Reinstall on every cold start (ephemeral runtime). Pinned for reproducibility.
-ESM_REVISION = "81b3646c9429ea8458918415ad6a46178cb59833"
-# !pip install -q "esm @ git+https://github.com/Biohub/esm.git@{ESM_REVISION}" py3Dmol
-
-import os
-
-# ESMFold2-Fast weights are small, so re-downloading each session is cheap; we default to
-# ephemeral /content. Set USE_DRIVE = True to cache to Drive across sessions instead.
-USE_DRIVE = False  #@param {type:"boolean"}
-if USE_DRIVE:
-    from google.colab import drive
-
-    drive.mount("/content/drive")
-    HF_HOME = "/content/drive/MyDrive/esmfold2/hf_cache"  # persistent across sessions
-else:
-    HF_HOME = "/content/hf_cache"  # fast, but ephemeral
-
-# HF_HOME must be set before transformers/huggingface_hub are imported.
-os.environ["HF_HOME"] = HF_HOME
-os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"  # speed up downloads
-os.makedirs(HF_HOME, exist_ok=True)
-HF_HOME
+# Installs ESMFold2 and a small 3D viewer. Runs once per session — wait for it to finish.
+# !pip install -q "esm @ git+https://github.com/Biohub/esm.git@81b3646c9429ea8458918415ad6a46178cb59833" py3Dmol
 
 # %% [markdown]
 # ## Imports
 #
-# All imports, once. We only need `ProteinInput` / `StructurePredictionInput` (Fast is
-# single-sequence), the `ESMFold2InputBuilder`, the `ESMFold2Model` class, and `py3Dmol`
-# for inline rendering.
+# Load the pieces we need: tools to describe the protein we want to fold, the
+# ESMFold2-Fast model itself, and `py3Dmol` to draw the result in 3D.
 
 # %%
 from pathlib import Path
@@ -84,54 +62,38 @@ import py3Dmol
 # %% [markdown]
 # ## Config
 #
-# A notebook has no command line, so every tunable value lives here as a plain
-# assignment. The `# parameters` tag lets tools like Papermill override these for
-# programmatic runs; the `#@param` annotations render as interactive widgets in Colab.
-#
-# `SEQUENCE` is a single protein chain (here, the M.HhaI methyltransferase as an
-# example). Note there is **no pinned revision** for ESMFold2-Fast below — it defaults to
-# the repo's `main`; pin a commit if the model card publishes one.
+# Everything you might want to change is gathered here. In Colab these show up as little
+# editable boxes next to the code (that's what the `#@param` comments do). `SEQUENCE` is
+# one protein chain — here, the M.HhaI methyltransferase as an example. To fold your own,
+# type it into the **`SEQUENCE`** box (edit the box, not the quotes in the code).
 
 # %% tags=["parameters"]
-MODEL_REPO = "biohub/ESMFold2-Fast"  #@param {type:"string"}
-MODEL_REVISION = ""  #@param {type:"string"}  empty -> repo default (main)
+MODEL = "biohub/ESMFold2-Fast"  #@param {type:"string"}
 
-SEQUENCE = (  #@param {type:"string"}
-    "MIEIKDKQLTGLRFIDLFAGLGGFRLALESCGAECVYSNEWDKYAQEVYEMNFGEKPEGDITQVNEKTIPDH"
-    "DILCAGFPCQAFSISGKQKGFEDSRGTLFFDIARIVREKKPKVVFMENVKNFASHDNGNTLEVVKNTMNELD"
-    "YSFHAKVLNALDYGIPQKRERIYMICFRNDLNIQNFQFPKPFELNTFVKDLLLPDSEVEHLVIDRKDLVMTN"
-    "QEIEQTTPKTVRLGIVGKGGQGERIYSTRGIAITLSAYGGGIFAKTGGYLVNGKTRKLHPRECARVMGYPDS"
-    "YKVHPSTSQAYKQFGNSVVINVLQYIAYNIGSSLNFKPY"
-)
+SEQUENCE = "MIEIKDKQLTGLRFIDLFAGLGGFRLALESCGAECVYSNEWDKYAQEVYEMNFGEKPEGDITQVNEKTIPDHDILCAGFPCQAFSISGKQKGFEDSRGTLFFDIARIVREKKPKVVFMENVKNFASHDNGNTLEVVKNTMNELDYSFHAKVLNALDYGIPQKRERIYMICFRNDLNIQNFQFPKPFELNTFVKDLLLPDSEVEHLVIDRKDLVMTNQEIEQTTPKTVRLGIVGKGGQGERIYSTRGIAITLSAYGGGIFAKTGGYLVNGKTRKLHPRECARVMGYPDSYKVHPSTSQAYKQFGNSVVINVLQYIAYNIGSSLNFKPY"  #@param {type:"string"}
 
 NUM_LOOPS = 3  #@param {type:"integer"}
 NUM_SAMPLING_STEPS = 50  #@param {type:"integer"}
 NUM_DIFFUSION_SAMPLES = 1  #@param {type:"integer"}
 SEED = 0  #@param {type:"integer"}
 
-# Output persistence: /content is fast but ephemeral; a Drive path survives sessions.
 OUTPUT_DIR = "/content/esmfold2_fast_out"  #@param {type:"string"}
 
 # %% [markdown]
-# ## Load model
+# ## Download and load the model
 #
-# Loading downloads the weights to `HF_HOME` and moves the model onto the GPU. This is
-# the most expensive setup step, so it gets its own cell — re-run it only when you change
-# the model. Passing `revision=None` when `MODEL_REVISION` is empty tells `transformers`
-# to use the repo default. On Colab the GPU is NVIDIA, so `.cuda()` is correct.
+# This line fetches the trained model from the internet the **first** time you run it and
+# loads it onto the GPU. ESMFold2-Fast is small, so this is quick. It then stays in memory
+# for the rest of the session, so you only wait once.
 
 # %%
-model = (
-    ESMFold2Model.from_pretrained(MODEL_REPO, revision=MODEL_REVISION or None)
-    .cuda()
-    .eval()
-)
+model = ESMFold2Model.from_pretrained(MODEL).cuda().eval()
 model.config
 
 # %% [markdown]
 # ## Inspect
 #
-# A quick look at the hardware and model size, so the runtime is self-documenting.
+# A quick look at the GPU we got and the model's size, so the runtime is self-documenting.
 # ESMFold2-Fast should report far fewer parameters than the full model.
 
 # %%
@@ -140,7 +102,6 @@ n_params = sum(p.numel() for p in model.parameters())
     "gpu": torch.cuda.get_device_name(0),
     "gpu_mem_GB": round(torch.cuda.get_device_properties(0).total_memory / 1e9, 1),
     "parameters_B": round(n_params / 1e9, 3),
-    "hf_home": os.environ["HF_HOME"],
 }
 
 # %% [markdown]
@@ -220,9 +181,8 @@ batch_metrics
 # %% [markdown]
 # ## Conclusion and export
 #
-# We write the single-sequence prediction to `OUTPUT_DIR` and trigger a browser download
-# so you keep a local copy — `/content` is **ephemeral** and vanishes when the runtime
-# resets (set `USE_DRIVE = True` in Setup to persist instead).
+# We write the single-sequence prediction to a `.cif` file. Colab deletes everything when
+# the session ends, so we also download the `.cif` to your own computer to keep it.
 
 # %%
 out_path = Path(OUTPUT_DIR) / "prediction.cif"
@@ -241,8 +201,8 @@ print(f"Wrote {out_path} ({out_path.stat().st_size} bytes)")
 # reporting pLDDT / pTM and saving the structure as mmCIF.
 #
 # **Next steps**
-# - **Throughput**: extend `BATCH_SEQUENCES` (or read sequences from a FASTA on Drive) to
-#   fold hundreds of designs; collect the metrics into a table for ranking.
+# - **Throughput**: extend `BATCH_SEQUENCES` (or read sequences from a FASTA file) to fold
+#   hundreds of designs; collect the metrics into a table for ranking.
 # - **Complexes & max accuracy**: switch to `esmfold2_colab.ipynb` (the full ESMFold2
 #   model) for protein–DNA–ligand multimers and MSA conditioning.
 # - **Inspect**: open any exported `.cif` in the [Mol* Viewer](https://molstar.org/viewer).
