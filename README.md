@@ -11,19 +11,27 @@ protein–protein and antibody–antigen interactions at any given compute budge
 This repository is a self-contained example that shows how to build a
 `modal.Image` with the right dependencies, cache model weights on a
 `modal.Volume`, run inference on an H100 GPU, and save the predicted structure
-locally.
+locally. It also ships two Google Colab notebook ports (see
+[Run on Colab](#run-on-colab)) for running the same models on a browser-hosted GPU.
 
 ## Project structure
 
 ```
 .
 ├── src/
-│   └── esmfold2.py        # Modal app: image, weight caching, inference, CLI entrypoint
+│   ├── scripts/
+│   │   └── esmfold2.py                 # Modal app: image, weight caching, inference, CLI entrypoint
+│   └── notebooks/
+│       ├── esmfold2_colab.py / .ipynb       # Colab: full ESMFold2 (complex or single chain)
+│       └── esmfold2_fast_colab.py / .ipynb  # Colab: ESMFold2-Fast (single-sequence, high-throughput)
 ├── data/
 │   └── prediction.cif     # Example output — the predicted M.HhaI / DNA / SAH complex
 ├── LICENSE                # Apache 2.0
 └── README.md
 ```
+
+Each Colab notebook is a [jupytext](https://jupytext.readthedocs.io/) percent-format
+`.py` (the source of truth) paired with a generated `.ipynb` (what you open in Colab).
 
 ## Model configurations
 
@@ -55,23 +63,39 @@ bound to a methylated DNA duplex and its S-adenosyl-L-homocysteine (SAH)
 cofactor — which exercises the model's full multimer capabilities:
 
 ```shell
-modal run src/esmfold2.py
+modal run src/scripts/esmfold2.py
 ```
 
 To fold a single protein chain, pass a sequence:
 
 ```shell
-modal run src/esmfold2.py --sequence "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQA..."
+modal run src/scripts/esmfold2.py --sequence "MKTAYIAKQRQISFVKSHFSRQLEERLGLIEVQA..."
 ```
 
 To choose where the structure is written:
 
 ```shell
-modal run src/esmfold2.py --output-path data/prediction.cif
+modal run src/scripts/esmfold2.py --output-path data/prediction.cif
 ```
 
 The first run downloads the model weights to a Modal Volume (several minutes);
 subsequent runs reuse the cached weights and start up much faster.
+
+## Run on Colab
+
+Prefer an interactive, browser-hosted GPU and no Modal account? Two notebook ports
+live in [`src/notebooks/`](src/notebooks/). They strip the Modal scaffolding into
+linear cells that run top-to-bottom, with a first-run setup cell, `#@param` config
+widgets, an inline [py3Dmol](https://github.com/3dmol/3Dmol.js) viewer, and `.cif`
+export.
+
+| Notebook | Model | Folds | Suggested runtime |
+|---|---|---|---|
+| [`esmfold2_colab`](src/notebooks/esmfold2_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmc-esmfold2/blob/main/src/notebooks/esmfold2_colab.ipynb) | full **ESMFold2** | the M.HhaI/DNA/SAH complex by default, or a single chain | A100 / High-RAM |
+| [`esmfold2_fast_colab`](src/notebooks/esmfold2_fast_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmc-esmfold2/blob/main/src/notebooks/esmfold2_fast_colab.ipynb) | **ESMFold2-Fast** | a single protein sequence, plus an optional high-throughput batch | T4 (free tier) |
+
+In Colab, set a GPU runtime first via **Runtime → Change runtime type → GPU**, then
+**Runtime → Run all**. The notebooks `pip install` the `esm` package on each cold start.
 
 ## Output
 
