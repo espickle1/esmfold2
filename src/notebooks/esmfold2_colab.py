@@ -65,6 +65,29 @@ from transformers.models.esmfold2.modeling_esmfold2 import ESMFold2Model
 import py3Dmol
 
 # %% [markdown]
+# ## Authenticate with Hugging Face
+#
+# The ESMFold2 weights live on the Hugging Face Hub and are **gated**, so you need to
+# identify yourself before the download cell below can fetch them. Add your access token
+# once as a Colab **secret** named `HF_TOKEN` (the 🔑 panel in the left sidebar — see the
+# README for the exact steps); this cell reads it automatically, with nothing to paste here.
+
+# %%
+from google.colab import userdata
+from huggingface_hub import login
+
+try:
+    hf_token = userdata.get("HF_TOKEN")
+except Exception:
+    raise RuntimeError(
+        "Couldn't read the 'HF_TOKEN' secret. Open the 🔑 Secrets panel in Colab's "
+        "left sidebar, add a secret named HF_TOKEN with your Hugging Face access token, "
+        "and toggle on 'Notebook access'. See the README for details."
+    )
+
+login(hf_token)
+
+# %% [markdown]
 # ## Config
 #
 # Everything you might want to change is gathered here. In Colab these show up as little

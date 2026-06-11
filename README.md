@@ -63,9 +63,10 @@ ESMFold2 is available in two configurations:
   [Run on Colab](#run-on-colab); for the Modal run, attach the token to the function as
   the `HF_TOKEN` environment variable via a [Modal secret](https://modal.com/docs/guide/secrets).
 
-> **Note:** The end-to-end Hugging Face credential setup — in-notebook guidance and the
-> Modal secret wiring — is still being finalized. The steps here describe the intended
-> flow.
+> **Note:** The Colab notebooks read the `HF_TOKEN` secret automatically (see
+> [Run on Colab](#run-on-colab)). The Modal script does not yet consume a token, so
+> folding the gated weights through it currently requires adding a
+> [Modal secret](https://modal.com/docs/guide/secrets) to the `@app.cls` yourself.
 
 ## Usage
 
