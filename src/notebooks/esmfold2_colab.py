@@ -15,11 +15,11 @@
 # [ESMFold2](https://biohub.ai/esm/protein/about) is a state-of-the-art model for
 # biomolecular complex structure prediction from [Biohub](https://biohub.ai/), built on
 # ESMC representations. This notebook runs the **full ESMFold2** model — the larger,
-# maximum-accuracy configuration — and by default folds a protein–DNA–ligand complex
-# (the M.HhaI DNA methyltransferase bound to a methylated DNA duplex and its SAH
-# cofactor, [PDB 1MHT](https://www.rcsb.org/structure/1MHT)) to exercise the model's
-# full multimer capabilities. You can also fold any single protein chain by setting a
-# sequence in the Config cell.
+# maximum-accuracy configuration — and by default folds a **single protein chain** from a
+# sequence you provide in the Config cell. It is still the full, multimer-capable model,
+# so it can also fold protein–DNA–ligand complexes (e.g. the M.HhaI DNA methyltransferase
+# bound to a methylated DNA duplex and its SAH cofactor, [PDB 1MHT](https://www.rcsb.org/structure/1MHT)) —
+# see the optional example in the "Build the input" cell.
 #
 # **New to this?** Just run the cells from top to bottom (**Runtime → Run all**). Each
 # code cell has a short note above it explaining what it does — you don't need any prior
@@ -28,7 +28,7 @@
 # > **Before you run anything:** turn on a GPU via
 # > **Runtime → Change runtime type → Hardware accelerator → GPU**. The full model is
 # > large; an **A100 / High-RAM** runtime is recommended. A free **T4** may run out of
-# > memory on the default multimer (fold a single short sequence instead if so).
+# > memory on long sequences (try a shorter one if so).
 
 # %% [markdown]
 # ## Setup
@@ -91,16 +91,15 @@ login(hf_token)
 # ## Config
 #
 # Everything you might want to change is gathered here. In Colab these show up as little
-# editable boxes next to the code (that's what the `#@param` comments do). Keep
-# **`FOLD_EXAMPLE_COMPLEX`** checked to fold the example M.HhaI / DNA / SAH complex; to
-# fold your own single protein instead, uncheck it and type your sequence into the
-# **`SEQUENCE`** box (edit the box, not the quotes in the code).
+# editable boxes next to the code (that's what the `#@param` comments do). The
+# **`SEQUENCE`** box starts empty — type one protein chain into it (edit the box, not the
+# quotes in the code). To fold a complex instead, see the optional example in the "Build
+# the input" cell.
 
 # %% tags=["parameters"]
 MODEL = "biohub/ESMFold2"  #@param {type:"string"}
 
-FOLD_EXAMPLE_COMPLEX = True  #@param {type:"boolean"}
-SEQUENCE = "MQIFVKTLTGKTITLEVEPSDTIENVKAKIQDKEGIPPDQQRLIFAGKQLEDGRTLSDYNIQKESTLHLVLRLRGG"  #@param {type:"string"}
+SEQUENCE = ""  #@param {type:"string"}
 
 NUM_LOOPS = 3  #@param {type:"integer"}
 NUM_SAMPLING_STEPS = 50  #@param {type:"integer"}
@@ -138,42 +137,48 @@ n_params = sum(p.numel() for p in model.parameters())
 # %% [markdown]
 # ## Build the input
 #
-# We assemble a `StructurePredictionInput`. With **`FOLD_EXAMPLE_COMPLEX`** checked we
-# build the default **M.HhaI / DNA / SAH** complex — the cytosine-5 DNA methyltransferase
-# from *Haemophilus haemolyticus* bound to a methylated DNA duplex (`C36` is the CCD code
-# for 5-methylcytosine) and its S-adenosyl-L-homocysteine (`SAH`) cofactor. Unchecked, we
-# fold the single protein chain in `SEQUENCE`.
+# We assemble a `StructurePredictionInput` from the single protein chain in `SEQUENCE`. If
+# the box is empty we stop with a clear message, so a top-to-bottom **Run all** fails right
+# here rather than deep inside the model. The optional commented block shows how to fold a
+# protein–DNA–ligand complex instead — the **M.HhaI / DNA / SAH** example (the cytosine-5
+# DNA methyltransferase from *Haemophilus haemolyticus* bound to a methylated DNA duplex,
+# where `C36` is the CCD code for 5-methylcytosine, and its `SAH` cofactor, PDB 1MHT).
 
 # %%
-MHHAI_SEQUENCE = (
-    "MIEIKDKQLTGLRFIDLFAGLGGFRLALESCGAECVYSNEWDKYAQEVYEMNFGEKPEGDITQVNEKTIPDH"
-    "DILCAGFPCQAFSISGKQKGFEDSRGTLFFDIARIVREKKPKVVFMENVKNFASHDNGNTLEVVKNTMNELD"
-    "YSFHAKVLNALDYGIPQKRERIYMICFRNDLNIQNFQFPKPFELNTFVKDLLLPDSEVEHLVIDRKDLVMTN"
-    "QEIEQTTPKTVRLGIVGKGGQGERIYSTRGIAITLSAYGGGIFAKTGGYLVNGKTRKLHPRECARVMGYPDS"
-    "YKVHPSTSQAYKQFGNSVVINVLQYIAYNIGSSLNFKPY"
+if not SEQUENCE.strip():
+    raise ValueError(
+        "SEQUENCE is empty. Type a protein sequence into the SEQUENCE box in the "
+        "Config cell above, then re-run this cell. (To fold a complex instead, "
+        "uncomment and edit the example block below.)"
+    )
+
+spi = StructurePredictionInput(
+    sequences=[ProteinInput(id="A", sequence=SEQUENCE.strip())]
 )
 
-if FOLD_EXAMPLE_COMPLEX:
-    spi = StructurePredictionInput(
-        sequences=[
-            ProteinInput(id="A", sequence=MHHAI_SEQUENCE),
-            DNAInput(
-                id="B",
-                sequence="GATAGCGCTATC",
-                modifications=[Modification(position=5, ccd="C36")],
-            ),
-            DNAInput(
-                id="C",
-                sequence="TGATAGCGCTATC",
-                modifications=[Modification(position=6, ccd="C36")],
-            ),
-            LigandInput(id="L", ccd=["SAH"]),
-        ]
-    )
-else:
-    spi = StructurePredictionInput(
-        sequences=[ProteinInput(id="A", sequence=SEQUENCE.strip())]
-    )
+# --- Optional: fold a protein–DNA–ligand complex instead ----------------------
+# The full ESMFold2 model also folds multimers. As an example, to fold the M.HhaI
+# DNA methyltransferase bound to a methylated DNA duplex (`C36` = 5-methylcytosine)
+# and its SAH cofactor (PDB 1MHT), comment out the single-chain `spi` above and
+# uncomment this block:
+#
+# MHHAI_SEQUENCE = (
+#     "MIEIKDKQLTGLRFIDLFAGLGGFRLALESCGAECVYSNEWDKYAQEVYEMNFGEKPEGDITQVNEKTIPDH"
+#     "DILCAGFPCQAFSISGKQKGFEDSRGTLFFDIARIVREKKPKVVFMENVKNFASHDNGNTLEVVKNTMNELD"
+#     "YSFHAKVLNALDYGIPQKRERIYMICFRNDLNIQNFQFPKPFELNTFVKDLLLPDSEVEHLVIDRKDLVMTN"
+#     "QEIEQTTPKTVRLGIVGKGGQGERIYSTRGIAITLSAYGGGIFAKTGGYLVNGKTRKLHPRECARVMGYPDS"
+#     "YKVHPSTSQAYKQFGNSVVINVLQYIAYNIGSSLNFKPY"
+# )
+# spi = StructurePredictionInput(
+#     sequences=[
+#         ProteinInput(id="A", sequence=MHHAI_SEQUENCE),
+#         DNAInput(id="B", sequence="GATAGCGCTATC",
+#                  modifications=[Modification(position=5, ccd="C36")]),
+#         DNAInput(id="C", sequence="TGATAGCGCTATC",
+#                  modifications=[Modification(position=6, ccd="C36")]),
+#         LigandInput(id="L", ccd=["SAH"]),
+#     ]
+# )
 
 [(s.id, type(s).__name__) for s in spi.sequences]
 
@@ -199,15 +204,17 @@ result = ESMFold2InputBuilder().fold(
 # ## Evaluation
 #
 # ESMFold2 reports calibrated confidence metrics: **pLDDT** (mean per-residue
-# confidence, 0–1), **pTM** (global fold confidence), and **ipTM** (interface
-# confidence — only meaningful for complexes). Higher is better.
+# confidence, 0–1) and **pTM** (global fold confidence). For complexes it also reports
+# **ipTM** (interface confidence), which we add below only when folding more than one
+# chain. Higher is better.
 
 # %%
 metrics = {
     "plddt_mean": float(result.plddt.mean()),
     "ptm": float(result.ptm),
-    "iptm": float(result.iptm),
 }
+if len(spi.sequences) > 1:  # ipTM (interface confidence) only applies to complexes
+    metrics["iptm"] = float(result.iptm)
 metrics
 
 # %% [markdown]
@@ -228,10 +235,10 @@ view.show()
 
 # %% [markdown]
 # **Reading the view:** the cartoon is colored N→C terminus by the spectrum; ligands and
-# modified residues are drawn as sticks. Cross-check the fold against the `pLDDT`/`ipTM`
-# numbers above — low-confidence regions are where the model is least sure. For a richer
-# inspection (per-residue pLDDT coloring, measurements) open the exported `.cif` in the
-# [Mol* Viewer](https://molstar.org/viewer).
+# modified residues are drawn as sticks. Cross-check the fold against the `pLDDT`/`pTM`
+# numbers above (and `ipTM` for complexes) — low-confidence regions are where the model is
+# least sure. For a richer inspection (per-residue pLDDT coloring, measurements) open the
+# exported `.cif` in the [Mol* Viewer](https://molstar.org/viewer).
 
 # %% [markdown]
 # ## Conclusion and export
@@ -253,9 +260,9 @@ print(f"Wrote {out_path} ({out_path.stat().st_size} bytes)")
 # %% [markdown]
 # ### What we did
 #
-# We loaded the full ESMFold2 model and folded the M.HhaI protein–DNA–ligand complex
-# (or your single sequence), reporting pLDDT / pTM / ipTM and saving the structure as
-# mmCIF.
+# We loaded the full ESMFold2 model and folded a single protein chain (or a complex, if
+# you uncommented the optional block), reporting pLDDT / pTM (plus ipTM for complexes) and
+# saving the structure as mmCIF.
 #
 # **Next steps**
 # - **Scale up**: loop over many sequences, or raise `NUM_LOOPS` / `NUM_SAMPLING_STEPS`
