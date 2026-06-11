@@ -104,8 +104,8 @@ export.
 
 | Notebook | Model | Folds | Suggested runtime |
 |---|---|---|---|
-| [`esmfold2_colab`](src/notebooks/esmfold2_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmc-esmfold2/blob/main/src/notebooks/esmfold2_colab.ipynb) | full **ESMFold2** | a single protein chain by default (complexes supported via an optional cell) | A100 / High-RAM |
-| [`esmfold2_fast_colab`](src/notebooks/esmfold2_fast_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmc-esmfold2/blob/main/src/notebooks/esmfold2_fast_colab.ipynb) | **ESMFold2-Fast** | a single protein sequence, plus an optional high-throughput batch | T4 (free tier) |
+| [`esmfold2_colab`](src/notebooks/esmfold2_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmfold2/blob/main/src/notebooks/esmfold2_colab.ipynb) | full **ESMFold2** | a single protein chain by default (complexes supported via an optional cell) | A100 / High-RAM |
+| [`esmfold2_fast_colab`](src/notebooks/esmfold2_fast_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmfold2/blob/main/src/notebooks/esmfold2_fast_colab.ipynb) | **ESMFold2-Fast** | a single protein sequence, plus an optional high-throughput batch | T4 (free tier) |
 
 **Before you run** (one-time):
 
