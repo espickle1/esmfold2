@@ -24,10 +24,10 @@ ESMFold2 is available in two configurations:
 
 Click a badge to open the notebook directly in Colab:
 
-| Notebook | Model | Folds | Suggested runtime |
-|---|---|---|---|
-| [`esmfold2_colab`](src/notebooks/esmfold2_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmfold2/blob/main/src/notebooks/esmfold2_colab.ipynb) | full **ESMFold2** | a single protein chain by default (complexes supported via an optional cell) | A100 / High-RAM |
-| [`esmfold2_fast_colab`](src/notebooks/esmfold2_fast_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmfold2/blob/main/src/notebooks/esmfold2_fast_colab.ipynb) | **ESMFold2-Fast** | a single protein sequence, plus an optional high-throughput batch | T4 (free tier) |
+| Notebook | Model | Folds |
+|---|---|---|
+| [`esmfold2_colab`](src/notebooks/esmfold2_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmfold2/blob/main/src/notebooks/esmfold2_colab.ipynb) | full **ESMFold2** | a single protein chain by default (complexes supported via an optional cell) |
+| [`esmfold2_fast_colab`](src/notebooks/esmfold2_fast_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/espickle1/esmfold2/blob/main/src/notebooks/esmfold2_fast_colab.ipynb) | **ESMFold2-Fast** | a single protein sequence, plus an optional high-throughput batch |
 
 **One-time setup:**
 
@@ -65,8 +65,13 @@ You can also render the `.cif` locally with the [Mol* Viewer](https://molstar.or
 
 ![Folded complex in Mol* Viewer](https://modal-cdn.com/cdnbot/example-esmfold2-molviewerin7blk30_59122d5b.webp)
 
-A sample prediction for the default M.HhaI / DNA / SAH complex is included at
-[`data/prediction.cif`](data/prediction.cif).
+Three example predictions are included in [`data/`](data/):
+
+| File | Structure | PDB |
+|---|---|---|
+| `HhaL methyltransferase-DNA comple (3MHT).cif` | HhaL methyltransferase–DNA complex | [3MHT](https://www.rcsb.org/structure/3MHT) |
+| `Poly(ethylene terephthalate) hydrolase (6EQE).cif` | Poly(ethylene terephthalate) hydrolase | [6EQE](https://rcsb.org/structure/6EQE) |
+| `Pseudomonas aeruginosa flagellin FliC (4NX9).cif` | *P. aeruginosa* flagellin FliC | [4NX9](https://rcsb.org/structure/4NX9) |
 
 ## Advanced: Run on Modal
 
@@ -114,7 +119,9 @@ structure is saved to `/tmp/esmfold2/prediction.cif` by default.
 │       ├── esmfold2_colab.py / .ipynb       # Colab: full ESMFold2 (single protein chain; complexes via optional cell)
 │       └── esmfold2_fast_colab.py / .ipynb  # Colab: ESMFold2-Fast (single-sequence, high-throughput)
 ├── data/
-│   └── prediction.cif     # Example output — the predicted M.HhaI / DNA / SAH complex
+│   ├── HhaL methyltransferase-DNA comple (3MHT).cif
+│   ├── Poly(ethylene terephthalate) hydrolase (6EQE).cif
+│   └── Pseudomonas aeruginosa flagellin FliC (4NX9).cif
 ├── LICENSE                # Apache 2.0
 └── README.md
 ```
