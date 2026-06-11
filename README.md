@@ -37,10 +37,19 @@ Click a badge to open the notebook directly in Colab:
    - Create a [Hugging Face account](https://huggingface.co/join) if you don't have one.
    - Accept the access terms on the [ESMFold2](https://huggingface.co/biohub/ESMFold2) and
      [ESMFold2-Fast](https://huggingface.co/biohub/ESMFold2-Fast) model pages.
-   - Create a read [access token](https://huggingface.co/settings/tokens).
+   - Create a read [access token](https://huggingface.co/settings/tokens)
+     ([video walkthrough](https://www.youtube.com/watch?v=uBSbgQ1qPHI)).
    - In Colab, click the 🔑 **Secrets** panel in the left sidebar, add a secret named
      **`HF_TOKEN`** with your token as the value, and toggle on **Notebook access**.
-     The notebook reads it automatically — nothing to paste into a cell.
+     The notebook reads it automatically — nothing to paste into a cell
+     ([video walkthrough](https://www.youtube.com/watch?v=oZZ7IFxiXbQ)).
+
+> **Keep your token private.** Your Hugging Face token acts like a password —
+> anyone who has it can access gated models on your behalf. Never paste it
+> directly into a notebook cell, share it in a screenshot, or commit it to a
+> repository. Using Colab Secrets (above) keeps it out of the notebook entirely.
+> If you accidentally expose a token, [revoke it immediately](https://huggingface.co/settings/tokens)
+> and generate a new one.
 
 Then **Runtime → Run all**. The notebook `pip install`s the `esm` package on the first run
 (a couple of minutes) before downloading the model weights.
